@@ -1,0 +1,39 @@
+{
+  "nav": {
+    "nsStaff": "NS Staff",
+    "companyDates": "С 2020 года"
+  },
+  "search": {
+    "searchStaff": "Поиск сотрудников...",
+    "searchProjects": "Поиск проектов..."
+  },
+  "sections": {
+    "staff": "Сотрудники",
+    "projects": "Проекты"
+  },
+  "staffCard": {
+    "age": "Возраст",
+    "years": "лет"
+  },
+  "projectCard": {
+    "developers": "Разработчики"
+  },
+  "contacts": {
+    "email": "Эл. почта",
+    "telegram": "Telegram канал",
+    "github": "GitHub"
+  },
+  "languages": {
+    "Russian": "Русский",
+    "English": "Английский",
+    "Spanish": "Испанский",
+    "French": "Французский",
+    "German": "Немецкий",
+    "Chinese": "Китайский",
+    "Japanese": "Японский"
+  },
+  "empty": {
+    "noStaff": "Сотрудники не найдены",
+    "noProjects": "Проекты не найдены"
+  }
+}
