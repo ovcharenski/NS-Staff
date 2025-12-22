@@ -1,6 +1,8 @@
-import { promises as fs } from 'fs';
-import path from 'path';
-import type { StaffMember, Project, ProjectsConfig } from '@shared/schema';
+import { promises as fs } from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
+import type { StaffMember, Project, ProjectsConfig } from "@shared/schema";
 
 export interface IStorage {
   getAllStaff(): Promise<StaffMember[]>;
@@ -10,6 +12,13 @@ export interface IStorage {
   getStaffPhotoPath(endpoint: string, photoNum: number): string;
   getProjectPicturePath(endpoint: string): Promise<string | undefined>;
 }
+
+// Определяем __dirname в ES-модуле
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Путь к папке data — предполагается, что она скопирована в dist/data
+const DATA_DIR = path.join(__dirname, "..", "data");
 
 class FileStorage implements IStorage {
   private staffCache: Map<string, StaffMember> = new Map();
@@ -21,40 +30,46 @@ class FileStorage implements IStorage {
 
     try {
       // Auto-discover staff: scan data/staff/*/values.json
-      const staffRoot = path.join(process.cwd(), 'data', 'staff');
+      const staffRoot = path.join(DATA_DIR, "staff");
       let staffDirs: string[] = [];
       try {
         const entries = await fs.readdir(staffRoot, { withFileTypes: true });
         staffDirs = entries.filter((e) => e.isDirectory()).map((e) => e.name);
       } catch (error) {
-        console.error('Failed to read staff directory:', error);
+        console.error("Failed to read staff directory:", error);
         staffDirs = [];
       }
 
       for (const dirName of staffDirs) {
         try {
-          const staffPath = path.join(staffRoot, dirName, 'values.json');
-          const staffData = await fs.readFile(staffPath, 'utf-8');
+          const staffPath = path.join(staffRoot, dirName, "values.json");
+          const staffData = await fs.readFile(staffPath, "utf-8");
           const staff: StaffMember = JSON.parse(staffData);
           // Prefer explicit endpoint from values.json; fallback to directory name
           const endpointKey = staff.endpoint || dirName;
           this.staffCache.set(endpointKey, staff);
         } catch (error) {
           // Skip directories without valid values.json
+          console.error(`Failed to load staff member in ${dirName}:`, error);
           continue;
         }
       }
 
       // Load projects config
-      const projectsConfigPath = path.join(process.cwd(), 'data', 'projects.json');
-      const projectsConfigData = await fs.readFile(projectsConfigPath, 'utf-8');
+      const projectsConfigPath = path.join(DATA_DIR, "projects.json");
+      const projectsConfigData = await fs.readFile(projectsConfigPath, "utf-8");
       const projectsConfig: ProjectsConfig = JSON.parse(projectsConfigData);
 
       // Load all projects
       for (const projectEndpoint of projectsConfig.project_endpoints) {
         try {
-          const projectPath = path.join(process.cwd(), 'data', 'projects', 'values', `${projectEndpoint}.json`);
-          const projectData = await fs.readFile(projectPath, 'utf-8');
+          const projectPath = path.join(
+            DATA_DIR,
+            "projects",
+            "values",
+            `${projectEndpoint}.json`
+          );
+          const projectData = await fs.readFile(projectPath, "utf-8");
           const project: Project = JSON.parse(projectData);
           this.projectsCache.set(projectEndpoint, project);
         } catch (error) {
@@ -64,7 +79,7 @@ class FileStorage implements IStorage {
 
       this.initialized = true;
     } catch (error) {
-      console.error('Failed to initialize storage:', error);
+      console.error("Failed to initialize storage:", error);
       throw error;
     }
   }
@@ -90,14 +105,14 @@ class FileStorage implements IStorage {
   }
 
   getStaffPhotoPath(endpoint: string, photoNum: number): string {
-    return path.join(process.cwd(), 'data', 'staff', endpoint, `${photoNum}.png`);
+    return path.join(DATA_DIR, "staff", endpoint, `${photoNum}.png`);
   }
 
   async getProjectPicturePath(endpoint: string): Promise<string | undefined> {
-    const basePath = path.join(process.cwd(), 'data', 'projects', 'pictures', endpoint);
-    
+    const basePath = path.join(DATA_DIR, "projects", "pictures", endpoint);
+
     // Try different extensions
-    const extensions = ['.jpg', '.png', '.jpeg', '.webp'];
+    const extensions = [".jpg", ".png", ".jpeg", ".webp"];
     for (const ext of extensions) {
       const fullPath = basePath + ext;
       try {
@@ -107,7 +122,7 @@ class FileStorage implements IStorage {
         continue;
       }
     }
-    
+
     return undefined;
   }
 }
