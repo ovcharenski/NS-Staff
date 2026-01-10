@@ -7,6 +7,7 @@ import type { Project, StaffMember } from '@shared/schema';
 import { Loader2 } from 'lucide-react';
 import { getLocalizedValue } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { MarkdownContent } from '@/components/MarkdownContent';
 
 export default function ProjectDetailPage() {
   const [, params] = useRoute('/projects/:endpoint');
@@ -66,9 +67,9 @@ export default function ProjectDetailPage() {
               </div>
             </div>
 
-            <p className="text-xl leading-relaxed text-foreground/90 break-words hyphens-auto" data-testid={`text-project-description-${project.endpoint}`}>
-              {description}
-            </p>
+            <div className="text-xl leading-relaxed text-foreground/90 break-words hyphens-auto" data-testid={`text-project-description-${project.endpoint}`}>
+              <MarkdownContent content={description} className="prose-lg" />
+            </div>
           </div>
 
           {/* Developers */}

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { getLocalizedValue } from '@/lib/utils';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { MarkdownContent } from '@/components/MarkdownContent';
 
 interface ProjectCardProps {
   project: Project;
@@ -51,7 +52,9 @@ export function ProjectCard({ project, size = 'small', accentColor = '#28735d' }
                 </Badge>
               ))}
             </div>
-            <p className="text-sm text-muted-foreground" data-testid={`text-project-description-${project.endpoint}`}>{description}</p>
+            <div className="text-sm text-muted-foreground" data-testid={`text-project-description-${project.endpoint}`}>
+              <MarkdownContent content={description} className="prose-sm prose-p:my-1" />
+            </div>
           </div>
         </div>
       </Card>

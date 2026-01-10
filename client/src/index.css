@@ -48,7 +48,7 @@
 
   --popover-border: 0 0% 84%;
 
-  --primary: 165 45% 30%;
+  --primary: 0 0% 50%;
 
   --primary-foreground: 165 45% 98%;
 
@@ -169,9 +169,9 @@
 
   --popover-border: 0 0% 16%;
 
-  --primary: 165 45% 30%;
+  --primary: 0 0% 50%;
 
-  --primary-foreground: 165 45% 98%;
+  --primary-foreground: 0 0% 50%;
 
   --secondary: 0 0% 14%;
 
@@ -353,4 +353,9 @@
   .border.hover-elevate:not(.no-hover-interaction-elevate)::after {
     inset: -1px;
   }
+}
+
+/* Force link colors in markdown content to use primary color */
+div[class*="max-w-none"] a {
+  color: hsl(var(--primary)) !important;
 }

@@ -19,6 +19,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { MarkdownContent } from '@/components/MarkdownContent';
 
 export default function StaffDetailPage() {
   const [, params] = useRoute('/:endpoint');
@@ -129,9 +130,9 @@ export default function StaffDetailPage() {
               </div>
 
               {/* Description */}
-              <p className="text-lg leading-relaxed text-foreground/90 break-words hyphens-auto" data-testid={`text-description-${staff.endpoint}`}>
-                {description}
-              </p>
+              <div className="text-lg leading-relaxed text-foreground/90 break-words hyphens-auto" data-testid={`text-description-${staff.endpoint}`}>
+                <MarkdownContent content={description} className="prose-lg" />
+              </div>
 
               {/* Mobile contacts collapsible */}
               {(staff.contacts.email || staff.contacts.telegram_channel || staff.contacts.github) && (

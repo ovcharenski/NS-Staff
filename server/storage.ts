@@ -17,7 +17,9 @@ export interface IStorage {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Путь к папке data — предполагается, что она скопирована в dist/data
+// Путь к папке data
+// В dev-режиме: server/../data (корень проекта/data)
+// В production: dist/server/../data (dist/data)
 const DATA_DIR = path.join(__dirname, "..", "data");
 
 class FileStorage implements IStorage {
