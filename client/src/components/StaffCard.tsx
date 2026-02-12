@@ -14,9 +14,15 @@ export function StaffCard({ staff, size = 'small' }: StaffCardProps) {
   const { i18n, t } = useTranslation('common');
   const displayName = getLocalizedValue(staff.name, i18n.language);
 
+  // Unified design: fall back to global brand colors when per-staff colors
+  // are not present (or will be removed when data fully moves to SQL).
+  const baseColor1 = staff.colors?.color2 ?? '#9e9e9e';
+  const baseColor2 = staff.colors?.color1 ?? '#adadad';
+  const borderColor = staff.colors?.color_main ?? '#cbcbcb';
+
   const gradientStyle = {
-    background: `linear-gradient(135deg, ${staff.colors.color2}15, ${staff.colors.color1}15)`,
-    borderColor: `${staff.colors.color_main}33`,
+    background: `linear-gradient(135deg, ${baseColor1}15, ${baseColor2}15)`,
+    borderColor: `${borderColor}33`,
   };
 
   if (size === 'large') {
@@ -41,7 +47,7 @@ export function StaffCard({ staff, size = 'small' }: StaffCardProps) {
   }
 
   return (
-    <Link href={`/${staff.endpoint}`} data-testid={`link-staff-${staff.endpoint}`}>
+    <Link href={`/developers/${staff.endpoint}`} data-testid={`link-staff-${staff.endpoint}`}>
       <Card 
         className="group relative overflow-hidden aspect-[3/4] hover-elevate active-elevate-2 transition-all duration-300 cursor-pointer border"
         style={gradientStyle}

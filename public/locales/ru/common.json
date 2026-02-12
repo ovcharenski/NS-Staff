@@ -1,7 +1,10 @@
 {
   "nav": {
     "nsStaff": "NS Staff",
-    "companyDates": "С 2020 года"
+    "companyDates": "С 2020 года",
+    "news": "Статьи",
+    "developers": "Разработчики",
+    "projects": "Проекты"
   },
   "search": {
     "searchStaff": "Поиск сотрудников...",
@@ -9,7 +12,8 @@
   },
   "sections": {
     "staff": "Сотрудники",
-    "projects": "Проекты"
+    "projects": "Проекты",
+    "news": "Статьи"
   },
   "staffCard": {
     "age": "Возраст",
@@ -35,5 +39,10 @@
   "empty": {
     "noStaff": "Сотрудники не найдены",
     "noProjects": "Проекты не найдены"
+  },
+  "news": {
+    "subtitle": "Заметки и обновления от команды.",
+    "empty": "Статей пока нет.",
+    "unknownAuthor": "Неизвестный автор"
   }
 }

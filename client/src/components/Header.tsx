@@ -1,4 +1,4 @@
-import { Link } from 'wouter';
+import { Link, useLocation } from 'wouter';
 import { useTranslation } from 'react-i18next';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import {
@@ -16,10 +16,16 @@ interface HeaderProps {
 
 export function Header({ staff, showCompanyDates }: HeaderProps) {
   const { t } = useTranslation('common');
+  const [location] = useLocation();
+
+  const isActive = (href: string) => {
+    if (href === '/') return location === '/' || location.startsWith('/news');
+    return location === href || location.startsWith(`${href}/`);
+  };
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 h-16 border-b border-border bg-background/80 backdrop-blur-md">
-      <div className="h-full px-6 flex items-center justify-between max-w-7xl mx-auto">
+      <div className="h-full px-6 flex items-center justify-between max-w-7xl mx-auto gap-6">
         <div className="flex items-center gap-4">
           <Link href="/" data-testid="link-home">
             <Tooltip>
@@ -39,6 +45,7 @@ export function Header({ staff, showCompanyDates }: HeaderProps) {
             </Tooltip>
           </Link>
 
+          {/* Page-level badge for staff detail */}
           {staff && (
             <Tooltip>
               <TooltipTrigger asChild>
@@ -87,6 +94,46 @@ export function Header({ staff, showCompanyDates }: HeaderProps) {
             </Tooltip>
           )}
         </div>
+
+        {/* Main navigation */}
+        <nav className="hidden md:flex items-center gap-4 text-sm flex-1">
+          <Link href="/news">
+            <a
+              className={
+                'px-3 py-1.5 rounded-full border transition-colors ' +
+                (isActive('/news')
+                  ? 'border-primary text-primary bg-primary/10'
+                  : 'border-transparent text-muted-foreground hover:border-border hover:text-foreground')
+              }
+            >
+              {t('nav.news', { defaultValue: 'Articles' })}
+            </a>
+          </Link>
+          <Link href="/developers">
+            <a
+              className={
+                'px-3 py-1.5 rounded-full border transition-colors ' +
+                (isActive('/developers')
+                  ? 'border-primary text-primary bg-primary/10'
+                  : 'border-transparent text-muted-foreground hover:border-border hover:text-foreground')
+              }
+            >
+              {t('nav.developers', { defaultValue: 'Developers' })}
+            </a>
+          </Link>
+          <Link href="/projects">
+            <a
+              className={
+                'px-3 py-1.5 rounded-full border transition-colors ' +
+                (isActive('/projects')
+                  ? 'border-primary text-primary bg-primary/10'
+                  : 'border-transparent text-muted-foreground hover:border-border hover:text-foreground')
+              }
+            >
+              {t('nav.projects', { defaultValue: 'Projects' })}
+            </a>
+          </Link>
+        </nav>
 
         <LanguageSwitcher />
       </div>

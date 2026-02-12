@@ -4,18 +4,31 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import HomePage from "@/pages/HomePage";
 import StaffDetailPage from "@/pages/StaffDetailPage";
 import ProjectDetailPage from "@/pages/ProjectDetailPage";
+import NewsListPage from "@/pages/NewsListPage";
+import NewsDetailPage from "@/pages/NewsDetailPage";
+import DevelopersPage from "@/pages/DevelopersPage";
+import ProjectsPage from "@/pages/ProjectsPage";
 import NotFound from "@/pages/not-found";
-import './lib/i18n';
+import "./lib/i18n";
 
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={HomePage} />
+      {/* Articles / news */}
+      <Route path="/" component={NewsListPage} />
+      <Route path="/news" component={NewsListPage} />
+      <Route path="/news/:id" component={NewsDetailPage} />
+
+      {/* Developers */}
+      <Route path="/developers" component={DevelopersPage} />
+      <Route path="/developers/:endpoint" component={StaffDetailPage} />
+
+      {/* Projects */}
+      <Route path="/projects" component={ProjectsPage} />
       <Route path="/projects/:endpoint" component={ProjectDetailPage} />
-      <Route path="/:endpoint" component={StaffDetailPage} />
+
       <Route component={NotFound} />
     </Switch>
   );
@@ -40,7 +53,7 @@ function ScrollToTop({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   useEffect(() => {
     try {
-      window.scrollTo({ top: 0, behavior: 'auto' });
+      window.scrollTo({ top: 0, behavior: "auto" });
     } catch {
       window.scrollTo(0, 0);
     }

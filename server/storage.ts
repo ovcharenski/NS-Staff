@@ -2,7 +2,17 @@ import { promises as fs } from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
-import type { StaffMember, Project, ProjectsConfig } from "@shared/schema";
+import type { StaffMember, Project } from "@shared/schema";
+import { db } from "./db";
+
+// Определяем __dirname в ES-модуле
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Путь к папке data (для фото и загруженных файлов)
+// В dev-режиме: server/../data (корень проекта/data)
+// В production: dist/server/../data (dist/data)
+const DATA_DIR = path.join(__dirname, "..", "data");
 
 export interface IStorage {
   getAllStaff(): Promise<StaffMember[]>;
@@ -13,97 +23,57 @@ export interface IStorage {
   getProjectPicturePath(endpoint: string): Promise<string | undefined>;
 }
 
-// Определяем __dirname в ES-модуле
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-// Путь к папке data
-// В dev-режиме: server/../data (корень проекта/data)
-// В production: dist/server/../data (dist/data)
-const DATA_DIR = path.join(__dirname, "..", "data");
-
-class FileStorage implements IStorage {
-  private staffCache: Map<string, StaffMember> = new Map();
-  private projectsCache: Map<string, Project> = new Map();
-  private initialized = false;
-
-  private async initialize() {
-    if (this.initialized) return;
-
-    try {
-      // Auto-discover staff: scan data/staff/*/values.json
-      const staffRoot = path.join(DATA_DIR, "staff");
-      let staffDirs: string[] = [];
-      try {
-        const entries = await fs.readdir(staffRoot, { withFileTypes: true });
-        staffDirs = entries.filter((e) => e.isDirectory()).map((e) => e.name);
-      } catch (error) {
-        console.error("Failed to read staff directory:", error);
-        staffDirs = [];
-      }
-
-      for (const dirName of staffDirs) {
-        try {
-          const staffPath = path.join(staffRoot, dirName, "values.json");
-          const staffData = await fs.readFile(staffPath, "utf-8");
-          const staff: StaffMember = JSON.parse(staffData);
-          // Prefer explicit endpoint from values.json; fallback to directory name
-          const endpointKey = staff.endpoint || dirName;
-          this.staffCache.set(endpointKey, staff);
-        } catch (error) {
-          // Skip directories without valid values.json
-          console.error(`Failed to load staff member in ${dirName}:`, error);
-          continue;
-        }
-      }
-
-      // Load projects config
-      const projectsConfigPath = path.join(DATA_DIR, "projects.json");
-      const projectsConfigData = await fs.readFile(projectsConfigPath, "utf-8");
-      const projectsConfig: ProjectsConfig = JSON.parse(projectsConfigData);
-
-      // Load all projects
-      for (const projectEndpoint of projectsConfig.project_endpoints) {
-        try {
-          const projectPath = path.join(
-            DATA_DIR,
-            "projects",
-            "values",
-            `${projectEndpoint}.json`
-          );
-          const projectData = await fs.readFile(projectPath, "utf-8");
-          const project: Project = JSON.parse(projectData);
-          this.projectsCache.set(projectEndpoint, project);
-        } catch (error) {
-          console.error(`Failed to load project ${projectEndpoint}:`, error);
-        }
-      }
-
-      this.initialized = true;
-    } catch (error) {
-      console.error("Failed to initialize storage:", error);
-      throw error;
-    }
-  }
-
+class SqliteStorage implements IStorage {
   async getAllStaff(): Promise<StaffMember[]> {
-    await this.initialize();
-    return Array.from(this.staffCache.values());
+    const rows = db
+      .prepare(
+        `SELECT endpoint, name_json, nicknames_json, age, country, languages_json,
+                post, description_json, contacts_json
+         FROM developers
+         ORDER BY endpoint ASC`,
+      )
+      .all() as any[];
+
+    return rows.map(this.rowToStaff);
   }
 
   async getStaffByEndpoint(endpoint: string): Promise<StaffMember | undefined> {
-    await this.initialize();
-    return this.staffCache.get(endpoint);
+    const row = db
+      .prepare(
+        `SELECT endpoint, name_json, nicknames_json, age, country, languages_json,
+                post, description_json, contacts_json
+         FROM developers
+         WHERE endpoint = ?`,
+      )
+      .get(endpoint) as any | undefined;
+
+    if (!row) return undefined;
+    return this.rowToStaff(row);
   }
 
   async getAllProjects(): Promise<Project[]> {
-    await this.initialize();
-    return Array.from(this.projectsCache.values());
+    const rows = db
+      .prepare(
+        `SELECT endpoint, name, description_json, tags_json, developers_json
+         FROM projects
+         ORDER BY endpoint ASC`,
+      )
+      .all() as any[];
+
+    return rows.map(this.rowToProject);
   }
 
   async getProjectByEndpoint(endpoint: string): Promise<Project | undefined> {
-    await this.initialize();
-    return this.projectsCache.get(endpoint);
+    const row = db
+      .prepare(
+        `SELECT endpoint, name, description_json, tags_json, developers_json
+         FROM projects
+         WHERE endpoint = ?`,
+      )
+      .get(endpoint) as any | undefined;
+
+    if (!row) return undefined;
+    return this.rowToProject(row);
   }
 
   getStaffPhotoPath(endpoint: string, photoNum: number): string {
@@ -127,6 +97,62 @@ class FileStorage implements IStorage {
 
     return undefined;
   }
+
+  private rowToStaff(row: any): StaffMember {
+    return {
+      endpoint: row.endpoint,
+      name: safeParseJsonRecord(row.name_json),
+      nicknames: safeParseJsonArray(row.nicknames_json),
+      age: row.age ?? 0,
+      country: row.country ?? "",
+      languages: safeParseJsonArray(row.languages_json),
+      post: row.post ?? "",
+      description: safeParseJsonRecord(row.description_json),
+      contacts: safeParseJsonObject(row.contacts_json),
+      projects: [], // projects are resolved from the projects table on the frontend side if needed
+      colors: undefined as any, // legacy field not used with unified design
+    };
+  }
+
+  private rowToProject(row: any): Project {
+    return {
+      endpoint: row.endpoint,
+      name: row.name,
+      tags: safeParseJsonArray(row.tags_json),
+      description: safeParseJsonRecord(row.description_json),
+      developers: safeParseJsonArray(row.developers_json),
+    };
+  }
 }
 
-export const storage = new FileStorage();
+function safeParseJsonArray(value: any): string[] {
+  if (!value) return [];
+  try {
+    const parsed = JSON.parse(String(value));
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function safeParseJsonRecord(value: any): Record<string, string> {
+  if (!value) return {};
+  try {
+    const parsed = JSON.parse(String(value));
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function safeParseJsonObject(value: any): any {
+  if (!value) return {};
+  try {
+    const parsed = JSON.parse(String(value));
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+export const storage = new SqliteStorage();

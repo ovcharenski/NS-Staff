@@ -1,7 +1,10 @@
 {
   "nav": {
     "nsStaff": "NS Staff",
-    "companyDates": "Since 2020"
+    "companyDates": "Since 2020",
+    "news": "Articles",
+    "developers": "Developers",
+    "projects": "Projects"
   },
   "search": {
     "searchStaff": "Search staff members...",
@@ -9,7 +12,8 @@
   },
   "sections": {
     "staff": "Staff",
-    "projects": "Projects"
+    "projects": "Projects",
+    "news": "Articles"
   },
   "staffCard": {
     "age": "Age",
@@ -35,5 +39,10 @@
   "empty": {
     "noStaff": "No staff members found",
     "noProjects": "No projects found"
+  },
+  "news": {
+    "subtitle": "Fresh notes and updates from the team.",
+    "empty": "No articles yet.",
+    "unknownAuthor": "Unknown author"
   }
 }

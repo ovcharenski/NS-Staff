@@ -22,7 +22,7 @@ import {
 import { MarkdownContent } from '@/components/MarkdownContent';
 
 export default function StaffDetailPage() {
-  const [, params] = useRoute('/:endpoint');
+  const [, params] = useRoute('/developers/:endpoint');
   const { t, i18n } = useTranslation('common');
   const endpoint = params?.endpoint;
 
@@ -46,15 +46,18 @@ export default function StaffDetailPage() {
   const displayName = getLocalizedValue(staff.name, i18n.language);
   const description = getLocalizedValue(staff.description, i18n.language);
   
-  const staffProjects = allProjects?.filter(p => staff.projects.includes(p.endpoint)) || [];
+  const staffProjects =
+    allProjects?.filter((p) => p.developers.includes(staff.endpoint)) || [];
 
   // QR download removed per requirements
+
+  const bgColor = '#28735d';
 
   return (
     <div 
       className="min-h-screen bg-background"
       style={{
-        background: `linear-gradient(to bottom, ${staff.colors.color2}08, transparent 50%)`,
+        background: `linear-gradient(to bottom, ${bgColor}08, transparent 50%)`,
       }}
     >
       <Header staff={staff} />
@@ -191,7 +194,7 @@ export default function StaffDetailPage() {
                     key={project.endpoint}
                     project={project}
                     size="small"
-                    accentColor={staff.colors.color_main}
+                    accentColor={'#28735d'}
                   />
                 ))}
               </div>
