@@ -21,6 +21,7 @@ db.pragma("foreign_keys = ON");
 // Run lightweight migrations on startup
 export function migrate() {
   // Developers table (backend name; exposed as /api/developers)
+  // id = Telegram ID (passed via API when creating)
   db.exec(`
     CREATE TABLE IF NOT EXISTS developers (
       id TEXT PRIMARY KEY,

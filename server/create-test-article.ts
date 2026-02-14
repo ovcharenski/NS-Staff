@@ -1,45 +1,23 @@
-import { db, migrate } from "./db";
+import path from "path";
+import { apiPost, apiUploadFile, API_BASE } from "./api-helper";
 
-function generateId8(): string {
-  const alphabet = "abcdefghijklmnopqrstuvwxyz0123456789";
-  let id = "";
-  for (let i = 0; i < 8; i++) {
-    id += alphabet[Math.floor(Math.random() * alphabet.length)];
-  }
-  return id;
-}
+const TEST_PNG = path.join(process.cwd(), "data", "TEST.png");
 
 async function main() {
-  // Ensure schema exists
-  migrate();
-
   const endpoint = "ovcharenski";
 
-  // Shared banner for all test articles so it's easy to
-  // visually distinguish them from real content.
-  // The file is expected at /data/TEST.png and is served
-  // statically by the Express app.
-  const bannerUrl = "/data/TEST.png";
+  // Upload TEST.png via API for the banner
+  const uploadResult = await apiUploadFile<{ url: string }>("/api/upload/image", TEST_PNG);
+  if (uploadResult.error) {
+    console.error("Failed to upload banner image:", uploadResult.error);
+    process.exit(1);
+  }
+  const bannerUrl = uploadResult.data!.url;
 
-  // Try to reuse localized author name from developers table if it exists
-  const devRow = db
-    .prepare(
-      `SELECT name_json FROM developers WHERE endpoint = ?`,
-    )
-    .get(endpoint) as { name_json?: string } | undefined;
-
-  const defaultAuthorName = {
+  const authorName = {
     ru: "Овчаренко Михаил",
     en: "Ovcharenko Michael",
   };
-
-  const authorName =
-    devRow && devRow.name_json
-      ? JSON.parse(devRow.name_json)
-      : defaultAuthorName;
-
-  const id = generateId8();
-  const nowIso = new Date().toISOString();
 
   const title = {
     ru: "Тестовая статья",
@@ -65,7 +43,7 @@ async function main() {
       "",
       "- Проверка отображения заголовка",
       "- Проверка отображения списков",
-      "- Проверка баннера `/data/TEST.png`",
+      "- Проверка баннера (загружен через API)",
     ].join("\n"),
     en: [
       "# Hello from test article",
@@ -80,46 +58,47 @@ async function main() {
       "",
       "- Check heading rendering",
       "- Check list rendering",
-      "- Check banner `/data/TEST.png`",
+      "- Check banner (uploaded via API)",
     ].join("\n"),
   };
 
   const avatarUrl = `/api/staff/${endpoint}/photo/1`;
 
-  db.prepare(
-    `INSERT INTO news (
-      id, title_json, summary_json, content_json, banner_url,
-      author_endpoint, author_name_json, author_avatar_url,
-      tags_json, published_at, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-  ).run(
-    id,
-    JSON.stringify(title),
-    JSON.stringify(summary),
-    JSON.stringify(content),
-    bannerUrl, // banner_url
-    endpoint,
-    JSON.stringify(authorName),
-    avatarUrl,
-    JSON.stringify(["test", "demo"]),
-    nowIso,
-    nowIso,
-    nowIso,
-  );
+  const body = {
+    title,
+    summary,
+    content,
+    bannerUrl,
+    tags: ["test", "demo"],
+    author: {
+      endpoint,
+      name: authorName,
+      avatarUrl,
+    },
+  };
 
-  // Log info for manual check
+  const result = await apiPost<{ id: string }>("/api/news", body);
+
+  if (result.error) {
+    console.error("Failed to create test article:", result.error);
+    process.exit(1);
+  }
+
+  const id = result.data?.id ?? "unknown";
+
   console.log("Created test article:");
   console.log(`  id: ${id}`);
-  console.log(`  GET /api/news/${id}`);
+  console.log(`  GET ${API_BASE}/api/news/${id}`);
   console.log(`  Author endpoint: ${endpoint}`);
   console.log(`  Author avatarUrl: ${avatarUrl}`);
   console.log(`  Banner URL: ${bannerUrl}`);
   console.log("");
   console.log("Открой в браузере:");
-  console.log(`  /news/${id}`);
+  console.log(`  ${API_BASE}/news/${id}`);
   console.log("и проверь, что аватар статьи грузится с 1.png автора.");
 }
 
-// eslint-disable-next-line @typescript-eslint/no-floating-promises
-main();
-
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

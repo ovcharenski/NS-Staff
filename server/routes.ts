@@ -101,6 +101,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Upload staff photo (requires API key)
+  const staffPhotoStorage = multer.diskStorage({
+    // eslint-disable-next-line @typescript-eslint/no-misused-promises
+    destination: async (req: Request, _file: Express.Multer.File, cb) => {
+      try {
+        const dir = path.join(DATA_DIR, "staff", req.params.endpoint);
+        await fs.mkdir(dir, { recursive: true });
+        cb(null, dir);
+      } catch (err: unknown) {
+        cb(err as Error, "");
+      }
+    },
+    filename: (req: Request, file: Express.Multer.File, cb) => {
+      const num = req.params.num;
+      const ext = path.extname(file.originalname) || ".png";
+      cb(null, `${num}${ext}`);
+    },
+  });
+
+  app.post(
+    '/api/staff/:endpoint/photo/:num',
+    requireApiKey,
+    multer({ storage: staffPhotoStorage, limits: { fileSize: 10 * 1024 * 1024 } }).single('file'),
+    async (req: Request, res: Response) => {
+      if (!req.file) {
+        return res.status(400).json({ error: 'No file uploaded' });
+      }
+      res.status(201).json({ url: `/api/staff/${req.params.endpoint}/photo/${req.params.num}` });
+    },
+  );
+
   //
   // Projects (legacy endpoints, kept until frontend moves to /api/projects CRUD fully)
   //
@@ -150,6 +181,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Upload project picture (requires API key)
+  const projectPictureStorage = multer.diskStorage({
+    // eslint-disable-next-line @typescript-eslint/no-misused-promises
+    destination: async (_req: Request, _file: Express.Multer.File, cb) => {
+      try {
+        const dir = path.join(DATA_DIR, "projects", "pictures");
+        await fs.mkdir(dir, { recursive: true });
+        cb(null, dir);
+      } catch (err: unknown) {
+        cb(err as Error, "");
+      }
+    },
+    filename: (req: Request, file: Express.Multer.File, cb) => {
+      const endpoint = req.params.endpoint;
+      const ext = path.extname(file.originalname) || ".png";
+      cb(null, `${endpoint}${ext}`);
+    },
+  });
+
+  app.post(
+    '/api/projects/:endpoint/picture',
+    requireApiKey,
+    multer({ storage: projectPictureStorage, limits: { fileSize: 10 * 1024 * 1024 } }).single('file'),
+    async (req: Request, res: Response) => {
+      if (!req.file) {
+        return res.status(400).json({ error: 'No file uploaded' });
+      }
+      res.status(201).json({ url: `/api/projects/${req.params.endpoint}/picture` });
+    },
+  );
+
   //
   // New API: developers
   //
@@ -182,13 +244,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/developers', requireApiKey, async (req, res) => {
     try {
-      const body = req.body as Partial<StaffMember>;
+      const body = req.body as Partial<StaffMember> & { id?: string };
       if (!body || !body.endpoint || !body.name) {
         return res.status(400).json({ error: 'endpoint and name are required' });
       }
+      if (!body.id) {
+        return res.status(400).json({ error: 'id (Telegram ID) is required' });
+      }
 
       const now = new Date().toISOString();
-      const id = body.endpoint;
+      const id = body.id;
 
       db.prepare(
         `INSERT INTO developers (
@@ -216,6 +281,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       if (error && error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
         return res.status(409).json({ error: 'Developer with this endpoint already exists' });
+      }
+      if (error && error.code === 'SQLITE_CONSTRAINT_PRIMARYKEY') {
+        return res.status(409).json({ error: 'Developer with this id (Telegram ID) already exists' });
       }
       console.error('Error creating developer:', error);
       res.status(500).json({ error: 'Failed to create developer' });

@@ -2,6 +2,7 @@ import { z } from "zod";
 
 // Staff member schema
 export const staffMemberSchema = z.object({
+  id: z.string().optional(), // Telegram ID, stored in DB as primary key; required when creating via API
   endpoint: z.string(),
   // Localized name, currently supports ru/en. For backward compatibility
   // we keep it as a generic record on the frontend and will migrate values

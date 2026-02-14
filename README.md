@@ -1,4 +1,4 @@
-# 🌌 NS Staff v2.1.2
+# 🌌 NS Staff v2.2.1
 
 Catalog of developers, projects, and articles for the NS team – built on top of Express + SQLite backend and a modern React/Tailwind frontend.
 
@@ -35,7 +35,10 @@ NS-Staff/
 │   ├── db.ts               # SQLite connection and schema migration
 │   ├── storage.ts          # High-level data access helpers
 │   ├── migrate-json.ts     # One-time migration from legacy JSON storage
-│   └── create-test-article.ts # Utility to create demo article with TEST.png banner
+│   ├── create-test-article.ts   # Utility to create demo article via API
+│   ├── create-test-developer.ts # Utility to create demo developer via API
+│   ├── create-test-project.ts   # Utility to create demo project via API
+│   └── api-helper.ts            # Shared API client for test scripts
 ├── shared/
 │   └── schema.ts           # Zod schemas and shared TypeScript types
 ├── data/                   # Data files, uploads, TEST.png banner, etc.
@@ -108,9 +111,17 @@ npm start
 - API endpoints (see `server/routes.ts`):
   - `GET /api/developers` – list all developers (staff members).
   - `GET /api/developers/:endpoint` – developer details.
+  - `POST /api/developers` – create developer (requires `id` = Telegram ID, `endpoint`, `name`).
+  - `PUT /api/developers/:endpoint` – update developer.
+  - `DELETE /api/developers/:endpoint` – delete developer.
+  - `POST /api/staff/:endpoint/photo/:num` – upload developer photo (1–3).
   - `GET /api/projects` – list projects.
   - `GET /api/projects/:endpoint` – project details.
+  - `POST /api/projects` – create project.
+  - `PUT /api/projects/:endpoint` – update project.
+  - `DELETE /api/projects/:endpoint` – delete project.
   - `GET /api/projects/:endpoint/picture` – project hero image.
+  - `POST /api/projects/:endpoint/picture` – upload project picture.
 - Some write operations require `X-API-Key: <API_KEY>` header.
 
 ### News / Articles
@@ -122,19 +133,24 @@ npm start
   - `PUT /api/news/:id` – update (requires API key).
   - `DELETE /api/news/:id` – delete (requires API key).
 
-#### Creating a Demo Article
+#### Creating Test Data via API
 
-For quick visual testing of layout and banner rendering:
+These scripts create demo data through API requests (useful for verifying API and future admin site integration). **The server must be running** (e.g. `npm run dev`) before running them.
 
 ```bash
-npm run dev:create-test-article
+# In one terminal: start the server
+npm run dev
+
+# In another terminal: create test data
+npm run dev:create-test-developer   # Creates developer "test-developer"
+npm run dev:create-test-project    # Creates project "test-project" (links to test-developer)
+npm run dev:create-test-article     # Creates article with TEST.png banner, author ovcharenski
 ```
 
-The helper script will:
-
-- Ensure DB schema is migrated.
-- Link the article to developer `ovcharenski` (if present).
-- Use `/data/TEST.png` as a banner (make sure the file exists).
+- `dev:create-test-developer` – creates a test developer and uploads 3 photos (1–3) from `data/TEST.png` via API.
+- `dev:create-test-project` – creates a test project and uploads picture from `data/TEST.png` via API (run after developer if you want the link).
+- `dev:create-test-article` – creates a demo article, uploads banner from `data/TEST.png` via API.
+- Ensure `data/TEST.png` exists before running these scripts.
 
 ---
 
@@ -155,7 +171,9 @@ The helper script will:
 - `npm start` – run built server in production mode.
 - `npm run check` – TypeScript typecheck.
 - `npm run db:migrate-json` – migrate legacy JSON data into SQLite.
-- `npm run dev:create-test-article` – create a demo article with a banner and markdown content.
+- `npm run dev:create-test-article` – create a demo article via API (server must be running).
+- `npm run dev:create-test-developer` – create a demo developer via API (server must be running).
+- `npm run dev:create-test-project` – create a demo project via API (server must be running).
 
 ---
 

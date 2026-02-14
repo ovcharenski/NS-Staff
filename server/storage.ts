@@ -27,20 +27,20 @@ class SqliteStorage implements IStorage {
   async getAllStaff(): Promise<StaffMember[]> {
     const rows = db
       .prepare(
-        `SELECT endpoint, name_json, nicknames_json, age, country, languages_json,
+        `SELECT id, endpoint, name_json, nicknames_json, age, country, languages_json,
                 post, description_json, contacts_json
          FROM developers
          ORDER BY endpoint ASC`,
       )
       .all() as any[];
 
-    return rows.map(this.rowToStaff);
+    return rows.map((row) => this.rowToStaff(row));
   }
 
   async getStaffByEndpoint(endpoint: string): Promise<StaffMember | undefined> {
     const row = db
       .prepare(
-        `SELECT endpoint, name_json, nicknames_json, age, country, languages_json,
+        `SELECT id, endpoint, name_json, nicknames_json, age, country, languages_json,
                 post, description_json, contacts_json
          FROM developers
          WHERE endpoint = ?`,
@@ -99,8 +99,11 @@ class SqliteStorage implements IStorage {
   }
 
   private rowToStaff(row: any): StaffMember {
+    const endpoint = row.endpoint;
+    const projects = this.getProjectsForDeveloper(endpoint);
     return {
-      endpoint: row.endpoint,
+      id: row.id,
+      endpoint,
       name: safeParseJsonRecord(row.name_json),
       nicknames: safeParseJsonArray(row.nicknames_json),
       age: row.age ?? 0,
@@ -109,9 +112,20 @@ class SqliteStorage implements IStorage {
       post: row.post ?? "",
       description: safeParseJsonRecord(row.description_json),
       contacts: safeParseJsonObject(row.contacts_json),
-      projects: [], // projects are resolved from the projects table on the frontend side if needed
+      projects,
       colors: undefined as any, // legacy field not used with unified design
     };
+  }
+
+  private getProjectsForDeveloper(developerEndpoint: string): string[] {
+    const rows = db
+      .prepare(
+        `SELECT endpoint, developers_json FROM projects`,
+      )
+      .all() as { endpoint: string; developers_json: string }[];
+    return rows
+      .filter((r) => safeParseJsonArray(r.developers_json).includes(developerEndpoint))
+      .map((r) => r.endpoint);
   }
 
   private rowToProject(row: any): Project {
