@@ -28,7 +28,7 @@ export function StaffCard({ staff, size = 'small' }: StaffCardProps) {
   if (size === 'large') {
     return (
       <Card 
-        className="p-6 hover-elevate active-elevate-2 transition-all duration-300 border"
+        className="p-6 hover-elevate active-elevate-2 transition-all duration-300 border card-mobile-light"
         style={gradientStyle}
         data-testid={`card-staff-large-${staff.endpoint}`}
       >
@@ -49,7 +49,7 @@ export function StaffCard({ staff, size = 'small' }: StaffCardProps) {
   return (
     <Link href={`/developers/${staff.endpoint}`} data-testid={`link-staff-${staff.endpoint}`}>
       <Card 
-        className="group relative overflow-hidden aspect-[3/4] hover-elevate active-elevate-2 transition-all duration-300 cursor-pointer border"
+        className="group relative overflow-hidden aspect-[3/4] hover-elevate active-elevate-2 transition-all duration-300 cursor-pointer border card-mobile-light"
         style={gradientStyle}
         data-testid={`card-staff-${staff.endpoint}`}
       >

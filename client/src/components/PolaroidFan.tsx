@@ -61,8 +61,8 @@ export function PolaroidFan({ staffEndpoint, photoCount = 3 }: PolaroidFanProps)
           }}
           data-testid={`polaroid-${staffEndpoint}-${photoNum}`}
         >
-          <div className="bg-white p-4 pb-16">
-            <div className="aspect-square bg-card overflow-hidden">
+          <div className="bg-white dark:!bg-white p-4 pb-16">
+            <div className="aspect-square bg-white dark:!bg-white overflow-hidden">
               <img
                 src={`/api/staff/${staffEndpoint}/photo/${photoNum}`}
                 alt={`Photo ${photoNum}`}

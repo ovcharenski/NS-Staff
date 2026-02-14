@@ -71,14 +71,14 @@ export default function StaffDetailPage() {
               <PolaroidFan staffEndpoint={staff.endpoint} photoCount={3} />
             </div>
 
-            {/* Mobile: First Photo Only */}
+            {/* Mobile: First Photo Only - force white in dark mode */}
             <div className="lg:hidden w-full max-w-sm mx-auto">
               <div 
-                className="bg-white p-4 pb-16"
+                className="bg-white dark:!bg-white p-4 pb-16"
                 style={{ filter: 'drop-shadow(0 10px 20px rgba(0, 0, 0, 0.3))' }}
                 data-testid="polaroid-mobile"
               >
-                <div className="aspect-square bg-card overflow-hidden">
+                <div className="aspect-square bg-white dark:!bg-white overflow-hidden">
                   <img
                     src={`/api/staff/${staff.endpoint}/photo/1`}
                     alt="Profile"

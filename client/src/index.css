@@ -359,3 +359,11 @@
 div[class*="max-w-none"] a {
   color: hsl(var(--primary)) !important;
 }
+
+/* Mobile + dark: subtle light card effect for developers and projects */
+@media (max-width: 1023px) {
+  .dark .card-mobile-light {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(248, 248, 248, 0.08)) !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+  }
+}

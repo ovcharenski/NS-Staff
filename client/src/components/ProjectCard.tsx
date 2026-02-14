@@ -24,7 +24,7 @@ export function ProjectCard({ project, size = 'small', accentColor = '#9e9e9e' }
   if (size === 'large') {
     return (
       <Card 
-        className="p-6 border transition-all duration-300"
+        className="p-6 border transition-all duration-300 card-mobile-light"
         style={gradientStyle}
         data-testid={`card-project-large-${project.endpoint}`}
       >
@@ -64,7 +64,7 @@ export function ProjectCard({ project, size = 'small', accentColor = '#9e9e9e' }
   return (
     <Link href={`/projects/${project.endpoint}`} data-testid={`link-project-${project.endpoint}`}>
       <Card 
-        className="group relative overflow-hidden aspect-[16/10] hover-elevate active-elevate-2 transition-all duration-300 cursor-pointer border"
+        className="group relative overflow-hidden aspect-[16/10] hover-elevate active-elevate-2 transition-all duration-300 cursor-pointer border card-mobile-light"
         style={gradientStyle}
         data-testid={`card-project-${project.endpoint}`}
       >
