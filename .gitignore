@@ -4,8 +4,10 @@ dist
 server/public
 vite.config.ts.*
 *.tar.gz
-data
+data/*
+!data/supported.json
+!data/test/
+!data/test/*
 .env
 .replit
-!data/supported.json
 .vscode
