@@ -1,4 +1,4 @@
-# 🌌 NS Staff v2.2.4
+# 🌌 NS Staff v2.3.0
 
 Catalog of developers, projects, and articles for the NS team – built on top of Express + SQLite backend and a modern React/Tailwind frontend.
 
@@ -34,13 +34,16 @@ NS-Staff/
 │   ├── routes.ts           # REST API for staff, projects, news, uploads
 │   ├── db.ts               # SQLite connection and schema migration
 │   ├── storage.ts          # High-level data access helpers
+│   ├── article-storage.ts  # Markdown content read/write for articles
 │   ├── create-test-article.ts   # Utility to create demo article via API
+│   ├── migrate-articles-to-markdown.ts  # One-time migration: SQL content → files
 │   ├── create-test-developer.ts # Utility to create demo developer via API
 │   ├── create-test-project.ts   # Utility to create demo project via API
 │   └── api-helper.ts            # Shared API client for test scripts
 ├── shared/
 │   └── schema.ts           # Zod schemas and shared TypeScript types
-├── data/                   # Data files, uploads, TEST.png banner, etc.
+├── data/                   # Data files, uploads, articles (markdown), etc.
+│   └── articles/           # Article content: {id}/ru.md, {id}/en.md
 ├── public/
 │   └── locales/            # i18n translation JSONs (ru/en)
 ├── vite.config.ts          # Vite configuration for client
@@ -125,12 +128,14 @@ npm start
 
 ### News / Articles
 
-- Articles live in the `news` table and are exposed via:
-  - `GET /api/news` – list sorted by `published_at DESC`.
-  - `GET /api/news/:id` – single article.
+- **Hybrid storage:** Metadata (title, summary, banner, author, tags, publishedAt) in SQLite; content in Markdown files at `data/articles/{id}/ru.md` and `data/articles/{id}/en.md`.
+- API endpoints:
+  - `GET /api/news` – list sorted by `published_at DESC` (content omitted; search matches title, summary, tags only).
+  - `GET /api/news/:id` – single article with full content from files.
   - `POST /api/news` – create (requires API key).
   - `PUT /api/news/:id` – update (requires API key).
   - `DELETE /api/news/:id` – delete (requires API key).
+  - `POST /api/news/:id/content/:lang` – upload Markdown file for article (ru or en), multipart `file`, requires API key.
 
 #### Creating Test Data via API
 
@@ -148,8 +153,18 @@ npm run dev:create-test-article     # Creates article with TEST.png banner, auth
 
 - `dev:create-test-developer` – creates a test developer and uploads 3 photos (1–3) from `data/TEST.png` via API.
 - `dev:create-test-project` – creates a test project and uploads picture from `data/TEST.png` via API (run after developer if you want the link).
-- `dev:create-test-article` – creates a demo article, uploads banner from `data/TEST.png` via API.
-- Ensure `data/TEST.png` exists before running these scripts.
+- `dev:create-test-article` – creates a demo article from `data/test/` (TEST.png banner, RU.md and EN.md content).
+- Ensure `data/test/TEST.png`, `data/test/RU.md`, and `data/test/EN.md` exist before running.
+
+#### Migrating existing articles to Markdown
+
+If you have articles with content in SQLite, run once:
+
+```bash
+npm run migrate:articles-to-markdown
+```
+
+This moves content from `content_json` to `data/articles/{id}/ru.md` and `en.md`.
 
 ---
 
@@ -172,6 +187,7 @@ npm run dev:create-test-article     # Creates article with TEST.png banner, auth
 - `npm run dev:create-test-article` – create a demo article via API (server must be running).
 - `npm run dev:create-test-developer` – create a demo developer via API (server must be running).
 - `npm run dev:create-test-project` – create a demo project via API (server must be running).
+- `npm run migrate:articles-to-markdown` – migrate article content from SQLite to Markdown files (one-time).
 
 ---
 

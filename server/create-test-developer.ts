@@ -1,7 +1,7 @@
 import path from "path";
 import { apiPost, apiUploadFile, API_BASE } from "./api-helper";
 
-const TEST_PNG = path.join(process.cwd(), "data", "TEST.png");
+const TEST_PNG = path.join(process.cwd(), "data", "test", "TEST.png");
 
 async function main() {
   const endpoint = "test-developer";

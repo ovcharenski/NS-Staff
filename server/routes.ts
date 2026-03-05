@@ -4,6 +4,12 @@ import { storage } from "./storage";
 import { promises as fs } from 'fs';
 import path from 'path';
 import { db, DATA_DIR } from "./db";
+import {
+  readArticleContent,
+  writeArticleContent,
+  writeArticleContentFile,
+  deleteArticleContent,
+} from "./article-storage";
 import type { Article, Project, StaffMember } from "@shared/schema";
 import multer from "multer";
 import { fileURLToPath } from "url";
@@ -493,7 +499,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         )
         .all() as any[];
 
-      const articles: Article[] = rows.map(rowToArticle);
+      const articles: Article[] = rows.map(rowToArticleList);
       res.json(articles);
     } catch (error) {
       console.error('Error fetching news:', error);
@@ -513,6 +519,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const article = rowToArticle(row);
+      const contentFromFiles = await readArticleContent(id);
+      const hasContentInFiles = Object.values(contentFromFiles).some((v) => v.length > 0);
+      if (hasContentInFiles) {
+        article.content = contentFromFiles;
+      }
+      // else: keep content from content_json (legacy fallback)
       res.json(article);
     } catch (error) {
       console.error('Error fetching article:', error);
@@ -520,7 +532,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/news', requireApiKey, (req, res) => {
+  app.post('/api/news', requireApiKey, async (req, res) => {
     try {
       const body = req.body as Partial<Article>;
       if (!body || !body.title || !body.content) {
@@ -553,7 +565,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         id,
         JSON.stringify(body.title),
         JSON.stringify(body.summary ?? {}),
-        JSON.stringify(body.content),
+        '{}',
         body.bannerUrl ?? null,
         author?.endpoint ?? null,
         author?.avatarUrl ?? null,
@@ -563,8 +575,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         nowIso,
       );
 
+      await writeArticleContent(id, body.content ?? {});
+
       const row = db.prepare(`SELECT * FROM news WHERE id = ?`).get(id) as any;
       const article = rowToArticle(row);
+      article.content = body.content ?? {};
       res.status(201).json(article);
     } catch (error: any) {
       if (error && error.code === 'SQLITE_CONSTRAINT_PRIMARYKEY') {
@@ -575,7 +590,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/news/:id', requireApiKey, (req, res) => {
+  app.put('/api/news/:id', requireApiKey, async (req, res) => {
     try {
       const { id } = req.params;
       const existingRow = db
@@ -589,12 +604,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const existing = rowToArticle(existingRow);
       const body = req.body as Partial<Article>;
 
+      // Load content from files when body.content not provided (hybrid storage)
+      let existingContent = existing.content;
+      const contentFromFiles = await readArticleContent(id);
+      if (Object.values(contentFromFiles).some((v) => v.length > 0)) {
+        existingContent = contentFromFiles;
+      }
+
       const merged: Article = {
         ...existing,
         ...body,
         title: { ...existing.title, ...(body.title ?? {}) },
         summary: { ...existing.summary, ...(body.summary ?? {}) },
-        content: { ...existing.content, ...(body.content ?? {}) },
+        content: body.content ?? existingContent,
         tags: body.tags ?? existing.tags,
         author: body.author ?? existing.author,
       };
@@ -610,7 +632,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       ).run(
         JSON.stringify(merged.title),
         JSON.stringify(merged.summary),
-        JSON.stringify(merged.content),
+        '{}',
         merged.bannerUrl ?? null,
         merged.author?.endpoint ?? null,
         merged.author?.avatarUrl ?? null,
@@ -620,15 +642,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         id,
       );
 
+      await writeArticleContent(id, merged.content ?? {});
+
       const row = db.prepare(`SELECT * FROM news WHERE id = ?`).get(id) as any;
-      res.json(rowToArticle(row));
+      const article = rowToArticle(row);
+      article.content = merged.content ?? {};
+      res.json(article);
     } catch (error) {
       console.error('Error updating article:', error);
       res.status(500).json({ error: 'Failed to update article' });
     }
   });
 
-  app.delete('/api/news/:id', requireApiKey, (req, res) => {
+  app.delete('/api/news/:id', requireApiKey, async (req, res) => {
     try {
       const { id } = req.params;
       const existing = db
@@ -638,6 +664,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: 'Article not found' });
       }
 
+      await deleteArticleContent(id);
       db.prepare(`DELETE FROM news WHERE id = ?`).run(id);
       res.status(204).send();
     } catch (error) {
@@ -645,6 +672,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: 'Failed to delete article' });
     }
   });
+
+  // Upload markdown content for article (ru or en)
+  const markdownUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 2 * 1024 * 1024 }, // 2 MB for markdown
+  });
+
+  app.post(
+    '/api/news/:id/content/:lang',
+    requireApiKey,
+    markdownUpload.single('file'),
+    async (req: Request, res: Response) => {
+      try {
+        const { id, lang } = req.params;
+        if (lang !== 'ru' && lang !== 'en') {
+          return res.status(400).json({ error: 'lang must be ru or en' });
+        }
+
+        const articleExists = db.prepare(`SELECT 1 FROM news WHERE id = ?`).get(id) as any | undefined;
+        if (!articleExists) {
+          return res.status(404).json({ error: 'Article not found' });
+        }
+
+        if (!req.file) {
+          return res.status(400).json({ error: 'No file uploaded' });
+        }
+
+        const text = req.file.buffer.toString('utf-8');
+        await writeArticleContentFile(id, lang, text);
+
+        res.status(201).json({
+          lang,
+          path: `data/articles/${id}/${lang}.md`,
+          size: req.file.size,
+        });
+      } catch (error: any) {
+        if (error?.message?.includes('Invalid lang')) {
+          return res.status(400).json({ error: error.message });
+        }
+        console.error('Error uploading markdown:', error);
+        res.status(500).json({ error: 'Failed to upload markdown' });
+      }
+    },
+  );
 
   //
   // Upload image
@@ -779,6 +850,13 @@ function rowToArticle(row: any): Article {
           avatarUrl: row.author_avatar_url ?? undefined,
         }
       : undefined,
+  };
+}
+
+function rowToArticleList(row: any): Article {
+  return {
+    ...rowToArticle(row),
+    content: {},
   };
 }
 

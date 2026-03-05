@@ -1,6 +1,6 @@
 {
   "name": "rest-express",
-  "version": "2.2.5",
+  "version": "2.3.0",
   "type": "module",
   "license": "MIT",
   "scripts": {
@@ -9,6 +9,7 @@
     "start": "cross-env NODE_ENV=production node dist/index.js",
     "check": "tsc",
     "dev:create-test-article": "cross-env NODE_ENV=development tsx server/create-test-article.ts",
+    "migrate:articles-to-markdown": "tsx server/migrate-articles-to-markdown.ts",
     "dev:create-test-developer": "cross-env NODE_ENV=development tsx server/create-test-developer.ts",
     "dev:create-test-project": "cross-env NODE_ENV=development tsx server/create-test-project.ts"
   },

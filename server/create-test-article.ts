@@ -1,10 +1,14 @@
 import path from "path";
+import { readFileSync } from "fs";
 import { apiPost, apiUploadFile, API_BASE } from "./api-helper";
 
-const TEST_PNG = path.join(process.cwd(), "data", "TEST.png");
+const DATA_TEST = path.join(process.cwd(), "data", "test");
+const TEST_PNG = path.join(DATA_TEST, "TEST.png");
+const RU_MD = path.join(DATA_TEST, "RU.md");
+const EN_MD = path.join(DATA_TEST, "EN.md");
 
 async function main() {
-  const endpoint = "ovcharenski";
+  const endpoint = "test-developer";
 
   // Upload TEST.png via API for the banner
   const uploadResult = await apiUploadFile<{ url: string }>("/api/upload/image", TEST_PNG);
@@ -25,36 +29,8 @@ async function main() {
   };
 
   const content = {
-    ru: [
-      "# Привет из тестовой статьи",
-      "",
-      "Это **markdown**‑контент с ссылками, кодом и списками.",
-      "",
-      "[Markdown Live Preview](https://markdownlivepreview.com/)",
-      "",
-      "```ts",
-      "console.log('hello from test article');",
-      "```",
-      "",
-      "- Проверка отображения заголовка",
-      "- Проверка отображения списков",
-      "- Проверка баннера (загружен через API)",
-    ].join("\n"),
-    en: [
-      "# Hello from test article",
-      "",
-      "This is **markdown** content with links, code blocks and lists.",
-      "",
-      "[Markdown Live Preview](https://markdownlivepreview.com/)",
-      "",
-      "```ts",
-      "console.log('hello from test article');",
-      "```",
-      "",
-      "- Check heading rendering",
-      "- Check list rendering",
-      "- Check banner (uploaded via API)",
-    ].join("\n"),
+    ru: readFileSync(RU_MD, "utf-8"),
+    en: readFileSync(EN_MD, "utf-8"),
   };
 
   const avatarUrl = `/api/staff/${endpoint}/photo/1`;
