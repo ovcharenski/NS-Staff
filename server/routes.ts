@@ -263,7 +263,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       db.prepare(
         `INSERT INTO developers (
-          id, endpoint, name_json, nicknames_json, age, country,
+          id, endpoint, name_json, nicknames_json, birth_date, country,
           languages_json, post, description_json, contacts_json,
           created_at, updated_at
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -272,7 +272,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         body.endpoint,
         JSON.stringify(body.name),
         JSON.stringify(body.nicknames ?? []),
-        body.age ?? null,
+        body.birthDate ?? null,
         body.country ?? null,
         JSON.stringify(body.languages ?? []),
         body.post ?? null,
@@ -304,7 +304,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: 'Developer not found' });
       }
 
-      const body = req.body as Partial<StaffMember>;
+      const body = req.body as Partial<StaffMember> & { birthDate?: string };
       const merged: StaffMember = {
         ...existing,
         ...body,
@@ -316,19 +316,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         projects: body.projects ?? existing.projects,
       };
 
+      // Preserve birth_date when not in body (API never returns it for privacy)
+      const birthDateToSet = body.birthDate !== undefined
+        ? (body.birthDate ?? null)
+        : (db.prepare("SELECT birth_date FROM developers WHERE endpoint = ?").get(endpoint) as { birth_date: string | null } | undefined)?.birth_date ?? null;
+
       const now = new Date().toISOString();
       const newId = body.id ?? existing.id;
 
       db.prepare(
         `UPDATE developers
-         SET id = ?, name_json = ?, nicknames_json = ?, age = ?, country = ?,
+         SET id = ?, name_json = ?, nicknames_json = ?, birth_date = ?, country = ?,
              languages_json = ?, post = ?, description_json = ?, contacts_json = ?, updated_at = ?
          WHERE endpoint = ?`,
       ).run(
         newId,
         JSON.stringify(merged.name),
         JSON.stringify(merged.nicknames),
-        merged.age,
+        birthDateToSet,
         merged.country,
         JSON.stringify(merged.languages),
         merged.post,

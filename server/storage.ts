@@ -27,7 +27,7 @@ class SqliteStorage implements IStorage {
   async getAllStaff(): Promise<StaffMember[]> {
     const rows = db
       .prepare(
-        `SELECT id, endpoint, name_json, nicknames_json, age, country, languages_json,
+        `SELECT id, endpoint, name_json, nicknames_json, birth_date, country, languages_json,
                 post, description_json, contacts_json
          FROM developers
          ORDER BY endpoint ASC`,
@@ -40,7 +40,7 @@ class SqliteStorage implements IStorage {
   async getStaffByEndpoint(endpoint: string): Promise<StaffMember | undefined> {
     const row = db
       .prepare(
-        `SELECT id, endpoint, name_json, nicknames_json, age, country, languages_json,
+        `SELECT id, endpoint, name_json, nicknames_json, birth_date, country, languages_json,
                 post, description_json, contacts_json
          FROM developers
          WHERE endpoint = ?`,
@@ -101,12 +101,14 @@ class SqliteStorage implements IStorage {
   private rowToStaff(row: any): StaffMember {
     const endpoint = row.endpoint;
     const projects = this.getProjectsForDeveloper(endpoint);
+    const birthDate = row.birth_date ?? undefined;
+    const age = birthDate ? getAgeFromBirthDate(birthDate) : null;
     return {
       id: row.id,
       endpoint,
       name: safeParseJsonRecord(row.name_json),
       nicknames: safeParseJsonArray(row.nicknames_json),
-      age: row.age ?? 0,
+      age: age ?? undefined,
       country: row.country ?? "",
       languages: safeParseJsonArray(row.languages_json),
       post: row.post ?? "",
@@ -137,6 +139,17 @@ class SqliteStorage implements IStorage {
       developers: safeParseJsonArray(row.developers_json),
     };
   }
+}
+
+function getAgeFromBirthDate(birthDate: string | null | undefined): number | null {
+  if (!birthDate) return null;
+  const birth = new Date(birthDate);
+  if (Number.isNaN(birth.getTime())) return null;
+  const today = new Date();
+  let age = today.getFullYear() - birth.getFullYear();
+  const m = today.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+  return age;
 }
 
 function safeParseJsonArray(value: any): string[] {

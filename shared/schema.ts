@@ -9,7 +9,7 @@ export const staffMemberSchema = z.object({
   // to simple "ru" / "en" keys when moving to SQL.
   name: z.record(z.string()),
   nicknames: z.array(z.string()),
-  age: z.number(),
+  age: z.number().optional(), // computed from birth_date, never expose birthDate in API
   country: z.string(),
   languages: z.array(z.string()),
   post: z.string(),

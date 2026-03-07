@@ -14,7 +14,7 @@ async function main() {
       en: "Test Developer",
     },
     nicknames: ["testdev"],
-    age: 25,
+    birthDate: "1999-01-15",
     country: "RU",
     languages: ["Russian","English"],
     post: "Junior Developer",

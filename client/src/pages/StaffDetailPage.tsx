@@ -115,8 +115,14 @@ export default function StaffDetailPage() {
               {/* Position, Age, Languages */}
               <div className="flex flex-wrap items-center gap-4 text-lg">
                 <span className="font-medium" data-testid={`text-position-${staff.endpoint}`}>{staff.post}</span>
-                <span className="text-muted-foreground">·</span>
-                <span className="text-muted-foreground" data-testid={`text-age-${staff.endpoint}`}>{staff.age} {t('staffCard.years')}</span>
+                {staff.age != null && (
+                  <>
+                    <span className="text-muted-foreground">·</span>
+                    <span className="text-muted-foreground" data-testid={`text-age-${staff.endpoint}`}>
+                      {staff.age} {t('staffCard.years')}
+                    </span>
+                  </>
+                )}
                 <span className="text-muted-foreground">·</span>
                 <div className="flex items-center gap-2">
                   {staff.languages.map((language, index) => (

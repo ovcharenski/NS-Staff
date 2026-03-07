@@ -1,4 +1,4 @@
-# 🌌 NS Staff v2.3.0
+# 🌌 NS Staff v2.3.2
 
 Catalog of developers, projects, and articles for the NS team – built on top of Express + SQLite backend and a modern React/Tailwind frontend.
 
@@ -110,6 +110,7 @@ npm start
 ### Staff & Projects
 
 - Data is stored in SQLite; schemas are defined in `shared/schema.ts`.
+- **Developers:** Age is computed from `birthDate` (ISO `YYYY-MM-DD`). API accepts `birthDate` on create/update but returns only `age` (never exposes birth date).
 - API endpoints (see `server/routes.ts`):
   - `GET /api/developers` – list all developers (staff members).
   - `GET /api/developers/:endpoint` – developer details.
@@ -151,7 +152,7 @@ npm run dev:create-test-project    # Creates project "test-project" (links to te
 npm run dev:create-test-article     # Creates article with TEST.png banner, author ovcharenski
 ```
 
-- `dev:create-test-developer` – creates a test developer and uploads 3 photos (1–3) from `data/TEST.png` via API.
+- `dev:create-test-developer` – creates a test developer and uploads 3 photos (1–3) from `data/test/TEST.png` via API.
 - `dev:create-test-project` – creates a test project and uploads picture from `data/TEST.png` via API (run after developer if you want the link).
 - `dev:create-test-article` – creates a demo article from `data/test/` (TEST.png banner, RU.md and EN.md content).
 - Ensure `data/test/TEST.png`, `data/test/RU.md`, and `data/test/EN.md` exist before running.
