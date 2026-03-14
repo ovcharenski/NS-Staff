@@ -1,4 +1,4 @@
-# 🌌 NS Staff v2.3.3
+# 🌌 NS Staff v2.3.4
 
 Catalog of developers, projects, and articles for the NS team – built on top of Express + SQLite backend and a modern React/Tailwind frontend.
 
@@ -195,13 +195,17 @@ This moves content from `content_json` to `data/articles/{id}/ru.md` and `en.md`
 ## 🆘 Troubleshooting
 
 1. **Server fails with API key error**
-  - Ensure `.env` contains `API_KEY`.
-  - For routes that require authentication, send header `X-API-Key: Bearer <API_KEY>` or `X-API-Key: <API_KEY>`.
-2. **Frontend loads but data is empty**
-  - Check that SQLite DB is initialized (run migrations or JSON migration if needed).
-  - Look at server logs – API responses are logged with status codes.
-3. **Static images (photos, TEST.png) not loading**
-  - Ensure `data/` folder exists and is available.
-  - Staff photos are served via `/api/staff/:endpoint/photo/:num`.
-  - Shared assets like `TEST.png` are served from `/data/TEST.png`.
 
+- Ensure `.env` contains `API_KEY`.
+- For routes that require authentication, send header `X-API-Key: Bearer <API_KEY>` or `X-API-Key: <API_KEY>`.
+
+2. **Frontend loads but data is empty**
+
+- Check that SQLite DB is initialized (run migrations or JSON migration if needed).
+- Look at server logs – API responses are logged with status codes.
+
+3. **Static images (photos, TEST.png) not loading**
+
+- Ensure `data/` folder exists and is available.
+- Staff photos are served via `/api/staff/:endpoint/photo/:num`.
+- Shared assets like `TEST.png` are served from `/data/TEST.png`.
